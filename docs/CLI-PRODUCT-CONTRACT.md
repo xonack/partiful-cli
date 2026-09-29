@@ -234,6 +234,7 @@ preview.
 These commands are destructive:
 
 - `events cancel`;
+- `events delete`;
 - `cohosts remove`;
 - `cohosts revoke-invite`; and
 - `cohosts link revoke`.
@@ -646,6 +647,41 @@ envelope, or malformed completion body is `contract.protocol_changed`. A
 no-response transport failure is `remote.unavailable`; because the write may
 have reached the remote, the caller must inspect remote state before another
 attempt.
+
+#### `partiful events delete <event-id>`
+
+Accepts no input fields beyond the event ID and the mutation flags. The exact
+callable is `deleteEvent` with parameters `{"eventId": "<event-id>"}`, matching
+the current web client's "Delete event for everyone" action.
+
+Each invocation calls `getEventInfo` once. `ownerIds` must be present and
+contain the current private account ID, `status` must be exactly `PUBLISHED`,
+and the observed guest count must be exactly `0`. There is no start-time
+requirement; a past empty event may be deleted. Missing, null, or differently
+typed precondition facts return `contract.protocol_changed` /
+`EVENT_DELETE_PROTOCOL_CHANGED`; a non-owner returns `permission.denied`; a
+non-`PUBLISHED` status returns `state.conflict` / `EVENT_PRECONDITION_FAILED`.
+A positive guest count returns `state.conflict` / `EVENT_PRECONDITION_FAILED`
+with `details.alternative: "events.cancel"`: the web client offers cancel only
+when guests exist and delete only when none exist, and the CLI preserves that
+split.
+
+`--dry-run` returns the event ID, request, effects, and public precondition
+markers without prompting or calling `deleteEvent`. Normal execution prompts on
+a TTY after the checks above and makes one `deleteEvent` attempt after
+confirmation. `--force` skips only the prompt. `--no-input`,
+`--non-interactive`, or non-TTY execution without `--force` returns
+`safety.confirmation_required`.
+
+The current client inspects no endpoint business field and performs no
+post-write read. Generic callable completion returns only:
+
+```json
+{"eventId":"evt_example","submitted":true}
+```
+
+It does not claim persisted deletion. Failure semantics for status, body, and
+transport match `events cancel`.
 
 ### Guests
 

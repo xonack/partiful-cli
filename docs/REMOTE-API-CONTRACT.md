@@ -266,6 +266,15 @@ authorization rule, persisted state, post-write complete Event, delivery,
 and retry meaning remains unknown and fails closed. The proposal does not
 register upload.
 
+`deleteEvent` (observed in the current web client on 2026-09-29 as
+`deleteEvent({params:{eventId}})`) takes only `eventId` through the same
+callable wrapper. The web client offers it only for an owned event with zero
+guests and inspects no response field. The product mirrors the cancel
+preconditions with the guest gate inverted to exactly zero and without a
+start-time gate. Endpoint-specific errors, authorization rules, and persisted
+state remain unknown and fail closed. The OpenAPI document does not yet
+register this operation.
+
 ## Guest list and host-invite proposal
 
 Revision `2026-08-12.5` adds unauthenticated current-client evidence from

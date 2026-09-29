@@ -47,6 +47,7 @@ expected_commands = [
     "doctor",
     "events.cancel",
     "events.create",
+    "events.delete",
     "events.get",
     "events.list",
     "events.update",

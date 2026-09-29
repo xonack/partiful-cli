@@ -2150,7 +2150,7 @@ func TestExecuteSchemaListsOnlyCompletedCatalog(t *testing.T) {
 		Stdin: strings.NewReader(""),
 	}, app.Dependencies{})
 
-	const want = `{"ok":true,"data":{"commands":["auth.login","auth.logout","auth.status","blasts.send","cohosts.invite","cohosts.link.create","cohosts.link.revoke","cohosts.remove","cohosts.revoke-invite","contacts.list","doctor","events.cancel","events.create","events.get","events.list","events.update","guests.invite","guests.list","posters.list","posters.search","rsvp.get","rsvp.set","schema","version"]},"meta":{"command":"schema","cliVersion":"3.0.1","productContractRevision":"2026-08-12.7","remoteContractRevision":"2026-08-12.7","warnings":[]}}` + "\n"
+	const want = `{"ok":true,"data":{"commands":["auth.login","auth.logout","auth.status","blasts.send","cohosts.invite","cohosts.link.create","cohosts.link.revoke","cohosts.remove","cohosts.revoke-invite","contacts.list","doctor","events.cancel","events.create","events.delete","events.get","events.list","events.update","guests.invite","guests.list","posters.list","posters.search","rsvp.get","rsvp.set","schema","version"]},"meta":{"command":"schema","cliVersion":"3.0.1","productContractRevision":"2026-08-12.7","remoteContractRevision":"2026-08-12.7","warnings":[]}}` + "\n"
 	if result.ExitCode != 0 {
 		t.Fatalf("exit code = %d, want 0", result.ExitCode)
 	}
