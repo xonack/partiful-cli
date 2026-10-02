@@ -288,7 +288,14 @@ pages. The final data page is therefore consumed; unlike current contacts
 traversal, no empty terminal sentinel is required. The reviewed guest subset
 used by the Go product is string `id`, string `name`, reviewed guest
 `status`, numeric `count`, null-or-string `anchorGuestId`, and optional
-string `userId`.
+string `userId`. Host-fallback guest documents in `events/{eventId}/guests`
+carry the account as a `user` reference to `users/{userId}` instead
+(observed 2026-10-02); the fallback reads it when `userId` is absent.
+
+`guests list --socials` calls `getUsers` with `params.ids` (batches of 50)
+and reads only string `id` and the optional `socials` map
+`{<platform>: {value, visibility}}`. Handles the caller may not see are
+absent from the response, not masked. A record without an `id` fails closed.
 
 Current public assets await `addInvitedGuestsAsHost` completion but inspect no
 business field before success UI. This promotes only generic callable

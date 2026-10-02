@@ -59,7 +59,7 @@ partiful posters search --query <text>
 partiful contacts list [--query <text>]
 partiful events list --when <upcoming|past>
 partiful events get <event-id>
-partiful guests list <event-id>
+partiful guests list <event-id> [--socials]
 partiful rsvp get <event-id>
 partiful events create [flags]
 partiful events update <event-id> [flags]

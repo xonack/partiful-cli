@@ -18,6 +18,13 @@ type guest struct {
 	RSVPStatus  string `json:"rsvpStatus"`
 	PartySize   int    `json:"partySize"`
 	Cohost      bool   `json:"cohost"`
+	// Socials is present only when --socials is set.
+	Socials *[]guestSocial `json:"socials,omitempty"`
+}
+
+type guestSocial struct {
+	Platform string `json:"platform"`
+	Handle   string `json:"handle"`
 }
 
 type guestInviteOptions struct {
@@ -63,7 +70,11 @@ func executeGuestsList(
 	if inputError != nil {
 		return failure(definition.path, 2, *inputError, pretty)
 	}
-	filterHash := normalizedFilterHash(definition.path, eventID)
+	filter := eventID
+	if options.socials {
+		filter += "\x00socials"
+	}
+	filterHash := normalizedFilterHash(definition.path, filter)
 	var decodedCursor cursorPayload
 	var cursorKey []byte
 	var err error
@@ -139,6 +150,15 @@ func executeGuestsList(
 	end := min(offset+options.limit, len(items))
 	pageItems := make([]guest, end-offset)
 	copy(pageItems, items[offset:end])
+	if options.socials {
+		userIDs := projectedGuestUserIDs(catalog.Guests)[offset:end]
+		if err := attachGuestSocials(ctx, client, session.AccessToken, deviceID, pageItems, userIDs); err != nil {
+			if errors.Is(err, remote.ErrUnavailable) {
+				return guestsUnavailableFailure(definition.path, "The guest socials are unavailable.", "partiful: guest socials unavailable\n", true, pretty)
+			}
+			return guestsProtocolChangedFailure(definition.path, "GUESTS_PROTOCOL_CHANGED", "The guests no longer match the reviewed remote contract.", pretty)
+		}
+	}
 	var cursor *string
 	hasMore := end < len(items)
 	if hasMore {
@@ -294,6 +314,57 @@ func projectGuestList(
 		})
 	}
 	return projected, nil
+}
+
+// projectedGuestUserIDs returns the user ID of each guest projectGuestList
+// keeps, in the same order. Guests without a linked account map to "".
+func projectedGuestUserIDs(guests []remote.Guest) []string {
+	userIDs := make([]string, 0, len(guests))
+	for _, remoteGuest := range guests {
+		if remoteGuest.AnchorGuestID != nil {
+			continue
+		}
+		userID := ""
+		if remoteGuest.UserID != nil {
+			userID = *remoteGuest.UserID
+		}
+		userIDs = append(userIDs, userID)
+	}
+	return userIDs
+}
+
+func attachGuestSocials(
+	ctx context.Context,
+	client remote.Client,
+	accessToken string,
+	deviceID string,
+	items []guest,
+	userIDs []string,
+) error {
+	lookup := make([]string, 0, len(userIDs))
+	seen := make(map[string]struct{}, len(userIDs))
+	for _, userID := range userIDs {
+		if userID == "" {
+			continue
+		}
+		if _, duplicate := seen[userID]; duplicate {
+			continue
+		}
+		seen[userID] = struct{}{}
+		lookup = append(lookup, userID)
+	}
+	socials, err := client.GetUserSocials(ctx, accessToken, deviceID, lookup)
+	if err != nil {
+		return err
+	}
+	for index := range items {
+		projected := []guestSocial{}
+		for _, social := range socials[userIDs[index]] {
+			projected = append(projected, guestSocial{Platform: social.Platform, Handle: social.Handle})
+		}
+		items[index].Socials = &projected
+	}
+	return nil
 }
 
 func parseGuestInviteOptions(
@@ -473,6 +544,13 @@ func guestInvitePublicRequest(
 func guestsCollectionSuccessSchema() jsonSchema {
 	zero := 0
 	one := 1
+	social := objectSchema(
+		[]string{"platform", "handle"},
+		map[string]jsonSchema{
+			"platform": {Type: "string", MinLength: &one},
+			"handle":   {Type: "string", MinLength: &one},
+		},
+	)
 	item := objectSchema(
 		[]string{"displayName", "rsvpStatus", "partySize", "cohost"},
 		map[string]jsonSchema{
@@ -480,6 +558,7 @@ func guestsCollectionSuccessSchema() jsonSchema {
 			"rsvpStatus":  {Type: "string", Enum: eventReadRsvpValues()},
 			"partySize":   {Type: "integer", Minimum: &zero},
 			"cohost":      {Type: "boolean"},
+			"socials":     {Type: "array", Items: &social},
 		},
 	)
 	items := jsonSchema{Type: "array", Items: &item}
@@ -491,6 +570,7 @@ func guestListInputSchema() jsonSchema {
 	schema := collectionInputSchema(false)
 	schema.Required = append(schema.Required, "eventId")
 	schema.Properties["eventId"] = jsonSchema{Type: "string", MinLength: &one}
+	schema.Properties["socials"] = jsonSchema{Type: "boolean"}
 	return schema
 }
 

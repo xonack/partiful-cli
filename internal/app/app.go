@@ -244,7 +244,10 @@ var commandCatalog = []commandDefinition{
 			Required:    true,
 			Description: "Event identifier.",
 		}},
-		flags:         collectionFlagDefinitions(),
+		flags: append(collectionFlagDefinitions(), flagDefinition{
+			Name:        "--socials",
+			Description: "Include the social handles each guest shows on their profile.",
+		}),
 		inputSchema:   guestListInputSchema(),
 		successSchema: guestsCollectionSuccessSchema(),
 		failureTypes: []string{

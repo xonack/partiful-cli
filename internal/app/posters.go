@@ -29,6 +29,7 @@ type collectionOptions struct {
 	max            int
 	query          string
 	when           string
+	socials        bool
 }
 
 type cursorPayload struct {
@@ -69,6 +70,9 @@ func parseCollectionOptions(definition commandDefinition, argv []string) (collec
 		return collectionOptions{}, &failure.body
 	}
 	_, options.all = values["--all"]
+	if definition.kind == guestsListCommand {
+		_, options.socials = values["--socials"]
+	}
 	if definition.kind == postersSearchCommand || definition.kind == contactsListCommand {
 		query, queryProvided := values["--query"]
 		options.query = strings.ToLower(strings.TrimSpace(query))

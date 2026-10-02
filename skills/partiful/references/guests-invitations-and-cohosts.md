@@ -6,10 +6,11 @@ expected.
 ## List guests and resolve contacts
 
 ```bash
-partiful guests list <event-id>
+partiful guests list <event-id> [--socials]
 partiful contacts list --query "Alex"
 ```
 
+`--socials` adds the social handles each guest shows on their profile.
 Contacts return display names and shared-event counts. They do not expose email
 addresses or phone numbers.
 
