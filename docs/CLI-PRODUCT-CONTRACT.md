@@ -698,6 +698,12 @@ This host-only command accepts collection pagination flags. Each item is:
 }
 ```
 
+With `--socials`, each item also carries `socials`: the handles the guest
+shows on their profile, as `[{"platform": "instagram", "handle": "example"}]`.
+A guest with no visible handles, or no linked account, gets `[]`. Without the
+flag the field is absent. The flag is part of the cursor filter, so a cursor
+from one mode is rejected by the other.
+
 The command never returns phone numbers, email addresses, guest IDs, or
 Partiful user IDs. Attendee access returns `permission.denied`, not an empty
 list.

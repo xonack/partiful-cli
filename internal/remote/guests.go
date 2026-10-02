@@ -478,6 +478,17 @@ func decodeGuestDocument(document firestoreDocumentRecord) (Guest, error) {
 	if err != nil {
 		return Guest{}, errors.New("guest user is invalid")
 	}
+	// Guest documents link the account through a "user" reference
+	// (observed 2026-10-02) rather than a userId string.
+	if userID == nil {
+		if _, linked := document.Fields["user"]; linked {
+			referenced, err := firestoreReferenceUserID(document.Fields, "user")
+			if err != nil {
+				return Guest{}, errors.New("guest user is invalid")
+			}
+			userID = &referenced
+		}
+	}
 	anchorGuestID, _, err := firestoreOptionalNullableString(document.Fields, "anchorGuestId")
 	if err != nil {
 		return Guest{}, errors.New("guest anchor is invalid")
